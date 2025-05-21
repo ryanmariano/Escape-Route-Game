@@ -1,8 +1,16 @@
 const canvas = document.getElementById("mazeCanvas");
-const contexto = canvas.getContext("2d");
+const ctx = canvas.getContext("2d");
 const tamanhoBloco = 50;
 
-// Matriz do Labirinto
+// Elementos das telas
+const menuInicio = document.getElementById("menuInicio");
+const telaJogo = document.getElementById("telaJogo");
+const popupParabens = document.getElementById("popupParabens"); // Corrigido para match com HTML
+const btnIniciar = document.getElementById("btnIniciar");
+const btnReiniciar = document.getElementById("btnReiniciar");
+const btnDica = document.getElementById("btnDica");
+
+// Labirinto (1: parede, 0: caminho, 4: saída)
 const labirinto = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 0, 1, 0, 0, 0, 0, 1],
@@ -10,93 +18,127 @@ const labirinto = [
     [1, 0, 1, 0, 0, 0, 1, 0, 1],
     [1, 0, 1, 0, 1, 0, 1, 0, 1],
     [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 4, 1] // Saída (ponto vermelho)
+    [1, 1, 1, 1, 1, 1, 1, 4, 1]
 ];
 
-let jogadorX = 1, jogadorY = 1; // Posição inicial do jogador
+let jogadorX = 1, jogadorY = 1;
+let caminhoSolucao = [];
 
+// Eventos
+btnIniciar.addEventListener("click", iniciarJogo);
+btnReiniciar.addEventListener("click", reiniciarJogo);
+btnDica.addEventListener("click", () => destacarRota(caminhoSolucao));
+
+function iniciarJogo() {
+    menuInicio.style.display = "none";
+    telaJogo.style.display = "block";
+    popupParabens.style.display = "none";
+    caminhoSolucao = bfs(labirinto, [1, 1], [6, 7]);
+    jogadorX = 1;
+    jogadorY = 1;
+    desenharLabirinto();
+}
+
+function reiniciarJogo() {
+    popupParabens.style.display = "none";
+    iniciarJogo();
+}
+
+// Desenha o labirinto e o jogador
 function desenharLabirinto() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Desenha o labirinto
     for (let i = 0; i < labirinto.length; i++) {
         for (let j = 0; j < labirinto[i].length; j++) {
-            if (labirinto[i][j] === 1) {
-                contexto.fillStyle = "black"; // Paredes
-            } else if (labirinto[i][j] === 0) {
-                contexto.fillStyle = "white"; // Corredores
-            } else if (labirinto[i][j] === 4) {
-                contexto.fillStyle = "red"; // Saída
-            }
-            contexto.fillRect(j * tamanhoBloco, i * tamanhoBloco, tamanhoBloco, tamanhoBloco);
+            ctx.fillStyle = 
+                labirinto[i][j] === 1 ? "black" : 
+                labirinto[i][j] === 4 ? "red" : "white";
+            ctx.fillRect(j * tamanhoBloco, i * tamanhoBloco, tamanhoBloco, tamanhoBloco);
         }
     }
     
     // Desenha o jogador
-    contexto.fillStyle = "green";
-    contexto.fillRect(jogadorY * tamanhoBloco, jogadorX * tamanhoBloco, tamanhoBloco, tamanhoBloco);
+    ctx.fillStyle = "green";
+    ctx.fillRect(jogadorY * tamanhoBloco, jogadorX * tamanhoBloco, tamanhoBloco, tamanhoBloco);
 }
 
-// Movimentação com as setas do teclado
+// Movimentação do jogador
 document.addEventListener("keydown", (evento) => {
-    if (evento.key === "ArrowUp") moverJogador(-1, 0);
-    if (evento.key === "ArrowDown") moverJogador(1, 0);
-    if (evento.key === "ArrowLeft") moverJogador(0, -1);
-    if (evento.key === "ArrowRight") moverJogador(0, 1);
+    const teclas = {
+        "ArrowUp": [-1, 0],
+        "ArrowDown": [1, 0],
+        "ArrowLeft": [0, -1],
+        "ArrowRight": [0, 1]
+    };
+
+    if (teclas[evento.key]) {
+        const [dx, dy] = teclas[evento.key];
+        const novoX = jogadorX + dx;
+        const novoY = jogadorY + dy;
+
+        if (labirinto[novoX]?.[novoY] !== undefined && labirinto[novoX][novoY] !== 1) {
+            jogadorX = novoX;
+            jogadorY = novoY;
+            desenharLabirinto();
+            
+            // Verifica se chegou ao final
+            if (labirinto[novoX][novoY] === 4) {
+                destacarRota(caminhoSolucao); // Mostra o caminho
+                setTimeout(() => {
+                    popupParabens.style.display = "flex"; // Mostra popup
+                }, 500);
+            }
+        }
+    }
 });
 
-function moverJogador(dx, dy) {
-    let novoX = jogadorX + dx;
-    let novoY = jogadorY + dy;
-
-    if (labirinto[novoX][novoY] === 0 || labirinto[novoX][novoY] === 4) {
-        jogadorX = novoX;
-        jogadorY = novoY;
-        desenharLabirinto();
-        verificarChegada(); // Aciona o BFS automaticamente quando chega ao ponto vermelho
-    }
-}
-
-// Algoritmo BFS no JavaScript
+// Algoritmo BFS (mantido igual)
 function bfs(matriz, inicio, fim) {
-    let filas = [[inicio]];
-    let visitados = new Set();
+    const fila = [[inicio]];
+    const visitados = new Set();
     visitados.add(inicio.toString());
 
-    while (filas.length > 0) {
-        let caminho = filas.shift();
-        let [x, y] = caminho[caminho.length - 1];
+    while (fila.length > 0) {
+        const caminho = fila.shift();
+        const [x, y] = caminho[caminho.length - 1];
 
         if (x === fim[0] && y === fim[1]) {
             return caminho;
         }
 
-        for (let [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-            let novoX = x + dx, novoY = y + dy;
-            let novoPos = [novoX, novoY].toString();
+        const movimentos = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        for (const [dx, dy] of movimentos) {
+            const novoX = x + dx;
+            const novoY = y + dy;
+            const novaPos = [novoX, novoY].toString();
 
-            if (novoX >= 0 && novoX < matriz.length && novoY >= 0 && novoY < matriz[0].length && matriz[novoX][novoY] !== 1) {
-                if (!visitados.has(novoPos)) {
-                    visitados.add(novoPos);
-                    filas.push([...caminho, [novoX, novoY]]);
-                }
+            if (novoX >= 0 && novoX < matriz.length &&
+                novoY >= 0 && novoY < matriz[0].length &&
+                matriz[novoX][novoY] !== 1 &&
+                !visitados.has(novaPos)) {
+                visitados.add(novaPos);
+                fila.push([...caminho, [novoX, novoY]]);
             }
         }
     }
     return [];
 }
 
-// Verifica se o jogador chegou à saída e aciona o BFS automaticamente
-function verificarChegada() {
-    if (labirinto[jogadorX][jogadorY] === 4) {
-        let rota = bfs(labirinto, [1, 1], [jogadorX, jogadorY]);
-        destacarRota(rota);
-    }
-}
-
-// Destaca o melhor caminho na tela
+// Destaca o caminho
 function destacarRota(rota) {
-    contexto.fillStyle = "blue"; // Cor da rota segura
+    ctx.fillStyle = "rgba(0, 0, 255, 0.3)";
     rota.forEach(([x, y]) => {
-        contexto.fillRect(y * tamanhoBloco, x * tamanhoBloco, tamanhoBloco, tamanhoBloco);
+        ctx.fillRect(y * tamanhoBloco, x * tamanhoBloco, tamanhoBloco, tamanhoBloco);
     });
+    // Redesenha o jogador por cima
+    ctx.fillStyle = "green";
+    ctx.fillRect(jogadorY * tamanhoBloco, jogadorX * tamanhoBloco, tamanhoBloco, tamanhoBloco);
 }
 
-desenharLabirinto();
+// Inicialização
+document.addEventListener("DOMContentLoaded", () => {
+    menuInicio.style.display = "block";
+    telaJogo.style.display = "none";
+    popupParabens.style.display = "none";
+});
