@@ -2,29 +2,55 @@
 <html lang="pt">
   <head>
     <meta charset="UTF-8" />
-    <title>Escape Routes</title>
+    <title>Escape Routes - Fases</title>
     <link rel="stylesheet" href="style.css" />
+    <!-- Tela de Finalização Especial -->
+    <div id="telaFinal" class="tela-final">
+      <div class="conteudo-final">
+        <h2>🏆 CONQUISTA SUPREMA! 🏆</h2>
+        <p>Você dominou todos os níveis do Escape Routes!</p>
+        <div class="estatisticas">
+          <p>Total de movimentos: <span id="totalMovimentos">0</span></p>
+          <p>Tempo total: <span id="tempoTotal">00:00</span></p>
+        </div>
+        <button id="btnVoltarMenuFinal">Voltar ao Menu</button>
+      </div>
+    </div>
   </head>
   <body>
     <!-- Tela de Início -->
     <div id="menuInicio" class="tela">
       <h1>Escape Routes</h1>
       <button id="btnIniciar">Iniciar Jogo</button>
+      <div class="instrucoes">
+        <p>Use as setas do teclado para se mover</p>
+        <p>Encontre o bloco vermelho para avançar!</p>
+      </div>
     </div>
 
     <!-- Tela do Jogo -->
     <div id="telaJogo" class="tela" style="display: none">
-      <h1>Escape Routes</h1>
+      <div class="info-fase">
+        <span id="textoFase">Fase 1</span>
+        <span id="contadorMovimentos">Movimentos: 0</span>
+      </div>
       <canvas id="mazeCanvas" width="450" height="350"></canvas>
-      <button id="btnDica">Mostrar Dica (BFS)</button>
+      <div class="botoes-jogo">
+        <button id="btnDica">Mostrar Dica (BFS)</button>
+        <button id="btnReiniciarFase">Reiniciar Fase</button>
+      </div>
     </div>
 
-    <!-- Tela de Parabéns -->
+    <!-- Pop-up de Parabéns -->
     <div id="popupParabens" class="popup">
-  <div class="popup-conteudo">
-      <h2>🎉 Parabéns! 🎉</h2>
-      <p>Você escapou do labirinto!</p>
-      <button id="btnReiniciar">Jogar Novamente</button>
+      <div class="popup-conteudo">
+        <h2>🎉 Parabéns! 🎉</h2>
+        <p id="mensagemVitoria">Você completou a fase 1!</p>
+        <div class="botoes-popup">
+          <button id="btnProximaFase">Próxima Fase</button>
+          <button id="btnMenuPrincipal">Menu Principal</button>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
