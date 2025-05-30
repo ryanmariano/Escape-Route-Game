@@ -2,13 +2,13 @@
 <html lang="pt">
   <head>
     <meta charset="UTF-8" />
-    <title>Escape Routes - Fases</title>
+    <title>Escape Routes - Fase de Evacuação</title>
     <link rel="stylesheet" href="style.css" />
-    <!-- Tela de Finalização Especial -->
+    <!-- Telas especiais -->
     <div id="telaFinal" class="tela-final">
       <div class="conteudo-final">
-        <h2>🏆 CONQUISTA SUPREMA! 🏆</h2>
-        <p>Você dominou todos os níveis do Escape Routes!</p>
+        <h2>🏆 EVACUAÇÃO BEM-SUCEDIDA! 🏆</h2>
+        <p>Você escapou de todos os incêndios!</p>
         <div class="estatisticas">
           <p>Total de movimentos: <span id="totalMovimentos">0</span></p>
           <p>Tempo total: <span id="tempoTotal">00:00</span></p>
@@ -16,38 +16,51 @@
         <button id="btnVoltarMenuFinal">Voltar ao Menu</button>
       </div>
     </div>
+    <div
+      id="telaGameOver"
+      class="tela-final"
+      style="background: linear-gradient(to bottom, #8b0000, #ff4500)"
+    >
+      <div class="conteudo-final">
+        <h2>🔥 EVACUAÇÃO FALHOU! 🔥</h2>
+        <p>O fogo se alastrou antes da sua fuga!</p>
+        <button id="btnReiniciarGameOver">Tentar Novamente</button>
+      </div>
+    </div>
   </head>
   <body>
     <!-- Tela de Início -->
     <div id="menuInicio" class="tela">
-      <h1>Escape Routes</h1>
-      <button id="btnIniciar">Iniciar Jogo</button>
+      <h1>ESCAPE ROUTES</h1>
+      <div class="logo-fogo">🔥</div>
+      <button id="btnIniciar">Iniciar Evacuação</button>
       <div class="instrucoes">
         <p>Use as setas do teclado para se mover</p>
-        <p>Encontre o bloco vermelho para avançar!</p>
+        <p>Encontre a saída vermelha antes do tempo acabar!</p>
       </div>
     </div>
 
     <!-- Tela do Jogo -->
     <div id="telaJogo" class="tela" style="display: none">
       <div class="info-fase">
-        <span id="textoFase">Fase 1</span>
+        <span id="textoFase">Zona de Perigo 1</span>
+        <span id="contadorTempo">Tempo: 120s</span>
         <span id="contadorMovimentos">Movimentos: 0</span>
       </div>
       <canvas id="mazeCanvas" width="450" height="350"></canvas>
       <div class="botoes-jogo">
-        <button id="btnDica">Mostrar Dica (BFS)</button>
-        <button id="btnReiniciarFase">Reiniciar Fase</button>
+        <button id="btnDica">Mostrar Rota Segura (BFS)</button>
+        <button id="btnReiniciarFase">Reiniciar Zona</button>
       </div>
     </div>
 
     <!-- Pop-up de Parabéns -->
     <div id="popupParabens" class="popup">
       <div class="popup-conteudo">
-        <h2>🎉 Parabéns! 🎉</h2>
-        <p id="mensagemVitoria">Você completou a fase 1!</p>
+        <h2>✅ ZONA EVACUADA!</h2>
+        <p id="mensagemVitoria">Você escapou da zona 1!</p>
         <div class="botoes-popup">
-          <button id="btnProximaFase">Próxima Fase</button>
+          <button id="btnProximaFase">Próxima Zona</button>
           <button id="btnMenuPrincipal">Menu Principal</button>
         </div>
       </div>

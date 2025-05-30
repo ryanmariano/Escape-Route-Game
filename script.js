@@ -1,4 +1,4 @@
-// script.js - Código Completo Atualizado
+// script.js - Código Completo Atualizado com Todas as Melhorias
 const canvas = document.getElementById("mazeCanvas");
 const ctx = canvas.getContext("2d");
 const tamanhoBloco = 50;
@@ -9,17 +9,20 @@ const elementos = {
     jogo: document.getElementById("telaJogo"),
     popup: document.getElementById("popupParabens"),
     final: document.getElementById("telaFinal"),
+    gameOver: document.getElementById("telaGameOver"),
     botoes: {
         iniciar: document.getElementById("btnIniciar"),
         dica: document.getElementById("btnDica"),
         reiniciar: document.getElementById("btnReiniciarFase"),
         proximaFase: document.getElementById("btnProximaFase"),
         menu: document.getElementById("btnMenuPrincipal"),
-        voltarFinal: document.getElementById("btnVoltarMenuFinal")
+        voltarFinal: document.getElementById("btnVoltarMenuFinal"),
+        reiniciarGameOver: document.getElementById("btnReiniciarGameOver")
     },
     textos: {
         fase: document.getElementById("textoFase"),
         movimentos: document.getElementById("contadorMovimentos"),
+        tempo: document.getElementById("contadorTempo"),
         vitoria: document.getElementById("mensagemVitoria"),
         totalMovimentos: document.getElementById("totalMovimentos"),
         tempoTotal: document.getElementById("tempoTotal")
@@ -93,6 +96,9 @@ let estado = {
     caminho: [],
     caminhoVisivel: false,
     dicaAtiva: false,
+    tempoFase: 120, // Tempo por fase em segundos
+    tempoRestante: 0,
+    intervaloTime: null,
     tempoInicio: null,
     intervaloContador: null
 };
@@ -114,6 +120,7 @@ function setupJogo() {
     elementos.jogo.style.display = "none";
     elementos.popup.style.display = "none";
     elementos.final.style.display = "none";
+    elementos.gameOver.style.display = "none";
 
     // Event listeners
     elementos.botoes.iniciar.addEventListener("click", iniciarJogo);
@@ -122,6 +129,7 @@ function setupJogo() {
     elementos.botoes.proximaFase.addEventListener("click", proximaFase);
     elementos.botoes.menu.addEventListener("click", voltarAoMenu);
     elementos.botoes.voltarFinal.addEventListener("click", voltarAoMenuFinal);
+    elementos.botoes.reiniciarGameOver.addEventListener("click", reiniciarFase);
     document.addEventListener("keydown", moverJogador);
 }
 
@@ -149,6 +157,23 @@ function atualizarContadorTempo() {
         `${minutos.toString().padStart(2, '0')}:${(segundos % 60).toString().padStart(2, '0')}`;
 }
 
+// Timer por fase
+function iniciarTimer() {
+    estado.tempoRestante = estado.tempoFase;
+    clearInterval(estado.intervaloTime);
+    
+    estado.intervaloTime = setInterval(() => {
+        estado.tempoRestante--;
+        elementos.textos.tempo.textContent = `Tempo: ${estado.tempoRestante}s`;
+        
+        if (estado.tempoRestante <= 0) {
+            clearInterval(estado.intervaloTime);
+            elementos.jogo.style.display = "none";
+            elementos.gameOver.style.display = "flex";
+        }
+    }, 1000);
+}
+
 function carregarFase(indice) {
     const labirinto = fases[indice];
     canvas.width = labirinto[0].length * tamanhoBloco;
@@ -161,36 +186,47 @@ function carregarFase(indice) {
     elementos.textos.fase.textContent = `Fase ${indice + 1}`;
     elementos.textos.movimentos.textContent = `Movimentos: 0`;
 
+    iniciarTimer();
     const saida = encontrarSaida(labirinto);
     estado.caminho = bfs(labirinto, [1, 1], saida);
     desenharLabirinto(labirinto);
 }
 
+// Desenho com tema de incêndio
 function desenharLabirinto(labirinto) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Cores temáticas
+    const cores = {
+        parede: "#8B0000",    // Vermelho escuro
+        chao: "#FFE4C4",      // Branco amarelado
+        saida: "#FF0000",     // Vermelho vivo
+        jogador: "#32CD32",   // Verde lima
+        dica: "rgba(255, 69, 0, 0.3)" // Laranja transparente
+    };
+
     // Desenha células
     for (let i = 0; i < labirinto.length; i++) {
         for (let j = 0; j < labirinto[i].length; j++) {
             ctx.fillStyle = 
-                labirinto[i][j] === 1 ? "#2c3e50" : 
-                labirinto[i][j] === 4 ? "#e74c3c" : "#ecf0f1";
+                labirinto[i][j] === 1 ? cores.parede : 
+                labirinto[i][j] === 4 ? cores.saida : cores.chao;
             ctx.fillRect(j * tamanhoBloco, i * tamanhoBloco, tamanhoBloco, tamanhoBloco);
-            ctx.strokeStyle = "#bdc3c7";
+            ctx.strokeStyle = "#FF4500";
             ctx.strokeRect(j * tamanhoBloco, i * tamanhoBloco, tamanhoBloco, tamanhoBloco);
         }
     }
 
     // Desenha caminho BFS se visível
     if (estado.caminhoVisivel) {
-        ctx.fillStyle = "rgba(155, 89, 182, 0.3)";
+        ctx.fillStyle = cores.dica;
         estado.caminho.forEach(([x, y]) => {
             ctx.fillRect(y * tamanhoBloco, x * tamanhoBloco, tamanhoBloco, tamanhoBloco);
         });
     }
 
     // Desenha jogador
-    ctx.fillStyle = "#2ecc71";
+    ctx.fillStyle = cores.jogador;
     ctx.beginPath();
     ctx.arc(
         (estado.jogador.y * tamanhoBloco) + (tamanhoBloco / 2),
@@ -202,7 +238,7 @@ function desenharLabirinto(labirinto) {
     ctx.fill();
 }
 
-// Algoritmo BFS
+// Algoritmo BFS (modificado para dica contextual)
 function bfs(matriz, inicio, fim) {
     const fila = [[inicio]];
     const visitados = new Set([inicio.toString()]);
@@ -286,22 +322,36 @@ function moverJogador(e) {
     }
 }
 
+// Dica contextual (BFS a partir da posição atual)
 function mostrarDicaTemporaria() {
     if (!estado.dicaAtiva) {
+        const labirinto = fases[estado.faseAtual];
+        const saida = encontrarSaida(labirinto);
+        
+        estado.caminho = bfs(labirinto, [estado.jogador.x, estado.jogador.y], saida);
         estado.caminhoVisivel = true;
         estado.dicaAtiva = true;
-        desenharLabirinto(fases[estado.faseAtual]);
+        desenharLabirinto(labirinto);
+        
+        setTimeout(() => {
+            estado.caminhoVisivel = false;
+            estado.dicaAtiva = false;
+            desenharLabirinto(labirinto);
+        }, 3000);
     }
 }
 
 function reiniciarFase() {
+    clearInterval(estado.intervaloTime);
     estado.caminhoVisivel = false;
     estado.dicaAtiva = false;
     elementos.popup.style.display = "none";
+    elementos.gameOver.style.display = "none";
     carregarFase(estado.faseAtual);
 }
 
 function proximaFase() {
+    clearInterval(estado.intervaloTime);
     estado.movimentosTotais += estado.movimentos;
     estado.faseAtual++;
     elementos.popup.style.display = "none";
@@ -361,6 +411,7 @@ function iniciarEfeitoConfete() {
 }
 
 function voltarAoMenu() {
+    clearInterval(estado.intervaloTime);
     elementos.popup.style.display = "none";
     elementos.menu.style.display = "flex";
     elementos.jogo.style.display = "none";
